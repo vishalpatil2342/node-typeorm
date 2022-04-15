@@ -3,8 +3,6 @@ import { connection } from "../data-source";
 
 import { User } from "../entity/user.entity";
 
-
-
 export const createUsers = async (req:Request,res:Response) => {
   const { firstname, lastname } = req.body;
   try {
@@ -15,8 +13,10 @@ export const createUsers = async (req:Request,res:Response) => {
     const result = await connection.getRepository(User).save(user);
     res.json(result);
     
-  } catch ({message}) {
-    res.status(404).json(message);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.json(error.message);
+    }
   }
 }
 
@@ -26,33 +26,31 @@ export const getUsers = async (req: Request, res: Response) => {
     const users = await connection.getRepository(User).find();
     res.json(users);
 
-  } catch ({message}) {
-    res.json(message);
+  } catch (error) {
+    if(error instanceof Error)
+    res.json(error.message);
   }
 }
 
 export const updateUsers = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { firstname, lastname } = req.body;
   try {
-    const user = await User.findOneBy({ id: parseInt(id) });
-    
+    const user: User | null = await connection.getRepository(User).findOneBy({
+      id:parseInt(id),
+    });
 
     if (!user) {
-      return res.json("user not found");
+      return res.json({ msg: "user did not exists" });
     }
-
-    user.firstname = firstname;
-    user.lastname = lastname;
-    await user.save();
-    res.json(user);
-
+    const result =  await connection.getRepository(User).update({id:parseInt(id)},req.body);
+    res.json(result);
   }
-  catch ({ message }) {
-    res.json(message);
+  catch (error) {
+    if (error instanceof Error) {
+      res.json(error.message);
+    }
   }
 }
-
 
 export const getUserByid = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -61,8 +59,10 @@ export const getUserByid = async (req: Request, res: Response) => {
       id: parseInt(id)
     })
     res.json(user);
-  } catch ({ message }) {
-    res.json(message);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.json(error.message);
+    }
   }
 }
 
@@ -71,9 +71,11 @@ export const getUserByid = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const user = await User.delete({id:parseInt(id)});
+    const user = await connection.getRepository(User).delete(parseInt(id));
     res.json(user);
-  } catch ({ message }) {
-    res.json(message);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.json(error.message);
+    }
   }
 }
